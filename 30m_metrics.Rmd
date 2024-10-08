@@ -20,7 +20,13 @@ CNN_30m_0 <- read.csv("split0/CNN_30m_0.csv")
 ALS_30m_1 <- read.csv("split1/ALS_30m_1.csv")
 CNN_30m_1 <- read.csv("split1/CNN_30m_1.csv")
 
-tony_outputs <- read.csv("tony_output.csv")
+ALS_30m_46 <- read.csv("split46/ALS_30m_46.csv")
+CNN_30m_46 <- read.csv("split46/CNN_30m_46.csv")
+
+tony_outputs_original <- read.csv("tony_output_original.csv")
+tony_outputs_far <- read.csv("tony_output_far.csv")
+
+tony_outputs <- rbind(tony_outputs_original, tony_outputs_far)
 ```
 
 clean error metrics calculated by ab and jed
@@ -47,19 +53,32 @@ split1_30m$person <- "ab"
 # get rid of fid, left, top, right, bottom
 split1_30m <- split1_30m[, -c(2, 3, 4, 5, 6, 7)]
 
+# split 46 (test data is far away): join ALS_10m_1 and ALS_20m_1 by 'id' 
+split46_30m <- left_join(ALS_30m_46, CNN_30m_46)
+names(split46_30m)[names(split46_30m) == "ALS_30m_46mean"] <- "ALS"
+names(split46_30m)[names(split46_30m) == "CNN_30m_46mean"] <- "CNN"
+split46_30m$grid <- "30"
+split46_30m$split <- "46"
+split46_30m$person <- "ab"
+
+# get rid of fid, left, top, right, bottom
+split46_30m <- split46_30m[, -c(1, 3, 4, 5, 6, 7, 8)]
+
 # rbind split0_10m and split0_20m
-test1 <- rbind(split0_30m, split1_30m)
+test1 <- rbind(split0_30m, split1_30m, split46_30m)
 ```
 
 clean error metrics calculated by tony 
 ```{r}
 # filter tony_outputs to only include name = all_train_test_splits_test_0 and name = all_train_test_splits_test_1
-tony_split1_2 <- tony_outputs[tony_outputs$name == "all_train_test_splits_test_0" | tony_outputs$name == "all_train_test_splits_test_1", ]
-tony_split1_2$split <- substr(tony_split1_2$name, nchar(tony_split1_2$name), nchar(tony_split1_2$name))
-tony_split1_2$grid <- 30
+tony_split1_2_46 <- tony_outputs[tony_outputs$name == "all_train_test_splits_test_0" | tony_outputs$name == "all_train_test_splits_test_1" | tony_outputs$name == "Distance_blocks_Test_46", ]
+tony_split1_2_46$split <- substr(tony_split1_2_46$name, nchar(tony_split1_2_46$name), nchar(tony_split1_2_46$name))
+# if split = 6, change to 46 
+tony_split1_2_46$split[tony_split1_2_46$split == "6"] <- "46"
+tony_split1_2_46$grid <- 30
 
 # select columns fid, predition_mean, ground_truth_mean
-tony <- tony_split1_2[, c("fid", "ground_truth_mean", "prediction_mean", "grid", "split")]
+tony <- tony_split1_2_46[, c("fid", "ground_truth_mean", "prediction_mean", "grid", "split")]
 names(tony)[names(tony) == "fid"] <- "id"
 names(tony)[names(tony) == "ground_truth_mean"] <- "ALS"
 names(tony)[names(tony) == "prediction_mean"] <- "CNN"
@@ -78,7 +97,7 @@ ggplot(test1, aes(x = ALS, y = CNN)) +
   labs(title = "",
        x = "Observed ALS",
        y = "Predicted CNN") +
-  facet_wrap(split~person)+
+  facet_wrap(split~person, ncol = 2)+
   xlim(0,10)+
   ylim(0,10)+
   theme_minimal()
@@ -135,7 +154,7 @@ ggplot(metrics_long, aes(x = Metric, y = Value, fill = person)) +
        x = "Error metric", 
        y = "Error (m)", 
        fill = "Metric") +
-  facet_wrap(~height_class, scales = "free")+
+  facet_wrap(split~height_class, scales = "free", ncol = 3)+
   theme_minimal()
 
 # plot of counts by each size cleass interval 
