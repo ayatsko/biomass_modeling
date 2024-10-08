@@ -175,7 +175,7 @@ ggplot(test1, aes(x = height_class)) +
   labs(title = "Counts by Height Class",
        x = "Height Class (m)",
        y = "Count") +
-  facet_wrap(~grid)+
+  facet_wrap(split~grid)+
   theme_minimal()
 ```
 
