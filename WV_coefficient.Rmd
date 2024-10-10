@@ -1,0 +1,104 @@
+---
+title: "Untitled"
+author: "abbey yatsko"
+date: "2024-10-10"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(dplyr)
+library(here)
+library(ggplot2)
+```
+
+load data
+```{r}
+ALS_sv <- read.csv("TLS_plot_CSVs/ALS_shade_vol_Zonal_stats.csv")
+CNN_sv <- read.csv("TLS_plot_CSVs/Model_shade_vol_Zonal_stats.csv")
+TLS_wv <- read.csv("TLS_plot_CSVs/TLS_woody_vols_all_clipped.csv")
+```
+
+Summarize TLS data by plot 
+```{r}
+TLS_wv_sum <- TLS_wv %>%
+  group_by(plot_id) %>%
+  summarise(X_mean = mean(Volume..L.),
+            X_sum = sum(Volume..L.))
+      
+```
+
+Convert canopy heights to shade volume 
+```{r}
+ALS_sv$X_mean_sv <- ALS_sv$X_mean * 0.25
+ALS_sv$X_sum_sv <- ALS_sv$X_sum * 0.25
+ALS_sv$method <- "ALS"
+
+CNN_sv$X_mean_sv <- CNN_sv$X_mean * 0.25
+CNN_sv$X_sum_sv <- CNN_sv$X_sum * 0.25
+CNN_sv$method <- "CNN"
+
+CNN_mean <- CNN_sv$X_mean_sv
+ALS_mean <- ALS_sv$X_mean_sv
+
+x <- as.data.frame(cbind(CNN_mean, ALS_mean))
+
+ggplot(x, aes(x = CNN_mean, y = ALS_mean)) + 
+  geom_point() +
+  geom_abline(intercept = 0, slope = 1, color = "red") 
+
+# linear regression 
+mod <- lm(CNN_mean ~ ALS_mean, data = x)
+summary(mod)
+
+```
+
+Calculate coefficient relating woody volume to shade volume
+```{r}
+# TLS woody volume 
+colnames(TLS_wv_sum)[2] <- "TLS_mean"
+colnames(TLS_wv_sum)[3] <- "TLS_sum"
+
+# ALS shade volume
+ALS_sv_sum <- ALS_sv[, c("proj", "X_mean_sv", "X_sum_sv")]
+colnames(ALS_sv_sum)[1] <- "plot_id"
+colnames(ALS_sv_sum)[2] <- "ALS_mean"
+colnames(ALS_sv_sum)[3] <- "ALS_sum"
+
+# CNN shade volume
+CNN_sv_sum <- CNN_sv[, c("proj", "X_mean_sv", "X_sum_sv")]
+colnames(CNN_sv_sum)[1] <- "plot_id"
+colnames(CNN_sv_sum)[2] <- "CNN_mean"
+colnames(CNN_sv_sum)[3] <- "CNN_sum"
+
+# merge dataframes by plot_id
+df <- merge(TLS_wv_sum, ALS_sv_sum, by = "plot_id")
+df <- merge(df, CNN_sv_sum, by = "plot_id")
+
+ggplot(df, aes(x = CNN_mean, y = ALS_mean)) + 
+  geom_point() +
+  geom_abline(intercept = 0, slope = 1, color = "red") 
+
+ggplot(df, aes(x = CNN_mean, y = TLS_mean)) + 
+  geom_point() 
+
+ggplot(df, aes(x = ALS_mean, y = TLS_mean)) + 
+  geom_point() 
+
+# Coefficient: WV (TLS): SV (ALS)
+mod <- lm(TLS_mean ~ ALS_mean, data = df)
+summary(mod)
+
+# Coefficient: WV (TLS): SV (CNN)
+mod <- lm(TLS_mean ~ CNN_mean, data = df)
+summary(mod)
+
+```
+
+
+
+
+
+
+
+
+

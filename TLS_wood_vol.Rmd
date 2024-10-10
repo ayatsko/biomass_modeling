@@ -13,7 +13,7 @@ library(here)
 load data
 ```{r}
 # read in list of csvs
-files <- list.files(path = "TLS_plot_CSVs", pattern = "*.csv", full.names = TRUE)
+files <- list.files(path = "TLS_plot_CSVs", pattern = "AM.*\\.csv$", full.names = TRUE)
 df_list <- lapply(files, read.csv)
 
 # combine list of dataframes into one dataframe
@@ -29,6 +29,6 @@ tls_wv$plot_id <- sub("\\..*", "", tls_wv$ID)
 tls_wv$tree_id <- sub(".*\\.", "", tls_wv$ID)
 
 # export merged .csv
-write.csv(tls_wv, "TLS_wood_vol.csv", row.names = FALSE)
+#write.csv(tls_wv, "TLS_wood_vol.csv", row.names = FALSE)
 ```
 
