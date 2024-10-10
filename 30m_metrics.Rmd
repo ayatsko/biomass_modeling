@@ -183,3 +183,12 @@ ggplot(test1, aes(x = height_class)) +
 save.image("Metrics.RData")
 ```
 
+
+
+
+
+
+
+
+
+
