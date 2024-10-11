@@ -14,20 +14,20 @@ library(dplyr)
 
 load data
 ```{r}
-ALS_30m_0 <- read.csv("split0/ALS_30m_0.csv")
-CNN_30m_0 <- read.csv("split0/CNN_30m_0.csv")
+ALS_30m_0 <- read.csv("data/error_comparison_fold/split0/ALS_30m_0.csv")
+CNN_30m_0 <- read.csv("data/error_comparison_fold/split0/CNN_30m_0.csv")
 
-ALS_30m_1 <- read.csv("split1/ALS_30m_1.csv")
-CNN_30m_1 <- read.csv("split1/CNN_30m_1.csv")
+ALS_30m_1 <- read.csv("data/error_comparison_fold/split1/ALS_30m_1.csv")
+CNN_30m_1 <- read.csv("data/error_comparison_fold/split1/CNN_30m_1.csv")
 
-ALS_30m_46 <- read.csv("split46/ALS_30m_46.csv")
-CNN_30m_46 <- read.csv("split46/CNN_30m_46.csv")
+ALS_30m_46 <- read.csv("data/error_comparison_fold/split46/ALS_30m_46.csv")
+CNN_30m_46 <- read.csv("data/error_comparison_fold/split46/CNN_30m_46.csv")
 
-ALS_30m_51 <- read.csv("split51/ALS_30m_51.csv")
-CNN_30m_51 <- read.csv("split51/CNN_30m_51.csv")
+ALS_30m_51 <- read.csv("data/error_comparison_fold/split51/ALS_30m_51.csv")
+CNN_30m_51 <- read.csv("data/error_comparison_fold/split51/CNN_30m_51.csv")
 
-tony_outputs_original <- read.csv("tony_output_original.csv")
-tony_outputs_far <- read.csv("tony_output_far.csv")
+tony_outputs_original <- read.csv("data/tony_output_original.csv")
+tony_outputs_far <- read.csv("data/tony_output_far.csv")
 
 tony_outputs <- rbind(tony_outputs_original, tony_outputs_far)
 ```
@@ -178,123 +178,4 @@ ggplot(test1, aes(x = height_class)) +
        y = "Count") +
   facet_wrap(split~grid)+
   theme_minimal()
-```
-
-working with Tony's outputs: full list of fulls 
-```{r}
-tony_outputs$name <- sub(".*_", "", tony_outputs$name)
-outputs <- tony_outputs
-unique(outputs$name)
-```
-
-weight by area, translate heights to shade volume, calculate residuals
-```{r}
-# weight by area 
-outputs$weighted_test_area <- outputs$test_area / 900
-
-# heights to shade volume, weighted by test area
-outputs <- outputs %>%
-  mutate(ground_truth_mean_sv = (ground_truth_mean*weighted_test_area) * 0.25,
-         prediction_mean_sv = (prediction_mean*weighted_test_area) * 0.25)
-
-outputs <- outputs %>%
-  mutate(residuals = ground_truth_mean_sv - prediction_mean_sv)
-
-outputs <- na.omit(outputs)
-
-# Create height bins (3m bins, from 0 to 30m)
-outputs <- outputs %>%
-  mutate(height_class = cut(ground_truth_mean, breaks = seq(0, 30, by = 3), include.lowest = TRUE))
-```
-
-Calculate error metrics 
-```{r}
-# Group by height classes and calculate the metrics for each class
-metrics_by_class <- outputs %>%
-  group_by(name, height_class) %>% # remove height_class if you want to calculate for the whole dataset
-  summarise(MAE = mean(abs(ground_truth_mean_sv - prediction_mean_sv), na.rm = TRUE),
-            RMSE = sqrt(mean((ground_truth_mean_sv - prediction_mean_sv)^2, na.rm = TRUE)),
-            MBE = mean(prediction_mean_sv - ground_truth_mean_sv, na.rm = TRUE),
-            R2 = summary(lm(prediction_mean_sv ~ ground_truth_mean_sv))$r.squared,
-            Pearson_R = cor(ground_truth_mean_sv, prediction_mean_sv, use = "complete.obs"),
-            MAPE = mean(abs((ground_truth_mean_sv - prediction_mean_sv) / ground_truth_mean_sv) * 100, na.rm = TRUE)) # Add MAPE
-
-# Group by height classes and calculate the metrics for the whole dataset
-metrics_all <- outputs %>%
-  group_by(name) %>% # remove height_class if you want to calculate for the whole dataset
-  summarise(MAE = mean(abs(ground_truth_mean_sv - prediction_mean_sv), na.rm = TRUE),
-            RMSE = sqrt(mean((ground_truth_mean_sv - prediction_mean_sv)^2, na.rm = TRUE)),
-            MBE = mean(prediction_mean_sv - ground_truth_mean_sv, na.rm = TRUE),
-            R2 = summary(lm(prediction_mean_sv ~ ground_truth_mean_sv))$r.squared,
-            Pearson_R = cor(ground_truth_mean_sv, prediction_mean_sv, use = "complete.obs"),
-            mean_observed = mean(ground_truth_mean_sv), 
-            MAE_p = MAE / mean_observed, 
-            RMSE_p = RMSE / mean_observed, 
-            MBE_p = MBE / mean_observed, 
-            MAE_p_inv = 1- MAE_p, 
-            RMSE_p_inv = 1 - RMSE_p, 
-            MBE_p_inv = 1 - MBE_p) # mean of observed shade volume for a given fold
-
-metrics_all <- as.data.frame(metrics_all)
-```
-
-```{r}
-# convert to long format by height class
-metrics_long <- metrics_by_class %>%
-  pivot_longer(cols = c(MAE, RMSE, MBE, R2, Pearson_R, MAPE), 
-               names_to = "Metric", 
-               values_to = "Value")
-
-# convert to long format by height class
-metrics_long_all <- metrics_all %>%
-  pivot_longer(cols = c(MAE, RMSE, MBE, R2, Pearson_R, mean_observed), 
-               names_to = "Metric", 
-               values_to = "Value")
-```
-
-Error by height class
-```{r}
-ggplot(metrics_long, aes(x = height_class, y = Value, fill = height_class)) +
-  geom_boxplot() +  # Change to boxplot
-  scale_fill_viridis_d() +  # Use viridis color palette
-  labs(title = "Error Metrics by Height Class",
-       x = "Height Class (m)", 
-       y = "Error (m)", 
-       fill = "Height class") +
-  facet_wrap(~Metric, scales = "free", ncol = 3) +  # Facet by Metric
-  theme_minimal()  # Minimal theme for a clean look
-```
-
-Error for all height classes
-```{r}
-ggplot(metrics_long_all, aes(x = Metric, y = Value, color = Metric)) +
-  geom_boxplot() +  # Change to boxplo
-  labs(title = "Mean Error Metrics",
-       x = "Metric", 
-       y = "Error") +
-  facet_wrap(~Metric, scales = "free", ncol = 3) +  # Facet by Metric
-  theme_minimal()  # Minimal theme for a clean look
-```
-
-Error by fold, weighted
-```{r}
-# weighted error calculation 
-alpha <- 1/3  # Weight for MAE
-beta <- 1/3   # Weight for RMSE
-gamma <- 1/3  # Weight for R²
-
-metrics_all <- metrics_all %>%
-  group_by(name) %>%
-  mutate(
-    Raw_Weight = alpha * MAE_p_inv + beta * RMSE_p_inv + gamma * R2
-  )
-
-# plot to make sure it makes sense
-ggplot(metrics_all, aes(x = R2, y = Raw_Weight)) +
-  geom_point()
-
-# export as csv
-# write.csv(metrics_all, "metrics_all.csv", row.names = FALSE)
-```
-
 ```
