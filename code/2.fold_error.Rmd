@@ -13,8 +13,8 @@ library(dplyr)
 
 load data
 ```{r}
-tony_outputs_original <- read.csv("data/tony_output_original.csv")
-tony_outputs_far <- read.csv("data/tony_output_far.csv")
+tony_outputs_original <- read.csv("~/Desktop/Arbor_Meta/FireBreak_new/GitHub/repos/savanna/data/tony_output_original.csv")
+tony_outputs_far <- read.csv("~/Desktop/Arbor_Meta/FireBreak_new/GitHub/repos/savanna/data/tony_output_far.csv")
 
 tony_outputs <- rbind(tony_outputs_original, tony_outputs_far)
 ```
@@ -66,7 +66,7 @@ Visualization
 ```{r}
 # convert to long format by height class
 metrics_long_all <- metrics_all %>%
-  pivot_longer(cols = c(MAE, RMSE, MBE, R2, mean_observed), 
+  pivot_longer(cols = c(MAE, MAE_p, RMSE, RMSE_p, MBE, MBE_p, R2, mean_observed), 
                names_to = "Metric", 
                values_to = "Value")
 
@@ -116,6 +116,24 @@ ggplot(outputs_long, aes(x = values,  fill = indexes, group = indexes)) +
         strip.text = element_text(size = 12))
 
 ```
+```{r}
+# Mean figures for results section
+library(dplyr)
+
+# Convert all columns except the first one to numeric
+metrics_all_numeric <- metrics_all %>%
+  mutate_at(vars(-1), as.numeric)
+
+# Calculate the mean for each numeric column (excluding the first)
+means <- colMeans(metrics_all_numeric[, -1], na.rm = TRUE)
+
+# Set option to avoid scientific notation
+options(scipen = 999)
+
+# Print the means in regular notation
+print(means)
+```
+
 
 Weighted error by fold
 ```{r}
