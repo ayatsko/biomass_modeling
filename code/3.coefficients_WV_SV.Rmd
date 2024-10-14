@@ -104,15 +104,16 @@ ggplot(df, aes(x = CNN_mean, y = TLS_mean)) +
   theme_classic()
 
 # relationship between ALS shade volume and TLS woody volume
-ggplot(df, aes(x = ALS_mean, y = TLS_mean)) + 
+ggplot(df, aes(x = ALS_sum, y = TLS_sum)) + 
   geom_point() +
   theme_classic()+
   geom_smooth(method = "lm", se = FALSE, color = "red") +
   labs(x = "ALS Shade Volume (m^3)", y = "TLS Woody Volume (m^3)") +
-  theme(plot.title = element_text(hjust = 0.5))
+  theme(plot.title = element_text(hjust = 0.5))  
+  #geom_text(aes(label = plot_id), nudge_x = 0, nudge_y = 0.1, check_overlap = FALSE)
 
 # Coefficient: WV (TLS): SV (ALS)
-mod <- lm(TLS_mean ~ ALS_mean, data = df)
+mod <- lm(TLS_sum ~ ALS_sum, data = df)
 summary(mod)
 
 # Coefficient: WV (TLS): SV (CNN)
@@ -120,5 +121,42 @@ mod <- lm(TLS_mean ~ CNN_mean, data = df)
 summary(mod)
 ```
 
+troubleshooting with coefficient 
+```{r}
+cal <- read.csv("/Users/abbeyyatsko/Downloads/callitris.csv")
 
+# merge cal and df by plot_id
+df <- merge(df, cal, by = "plot_id")
+
+ggplot(df, aes(x = ALS_sum, y = TLS_sum, color = contains_callitris)) + 
+  geom_point() +
+  theme_classic()+
+  facet_wrap(~contains_callitris) + 
+  geom_smooth(method = "lm", se = FALSE, color = "red") +
+  labs(x = "ALS Shade Volume (m^3)", y = "TLS Woody Volume (m^3)") +
+  theme(plot.title = element_text(hjust = 0.5)) + 
+  geom_text(aes(label = plot_id), nudge_x = 0, nudge_y = 0.1, check_overlap = FALSE)
+
+mod <- lm(TLS_sum ~ CNN_sum, data = df[df$contains_callitris == "y",])
+summary(mod)
+
+mod <- lm(TLS_sum ~ CNN_sum, data = df[df$contains_callitris == "n",])
+
+```
+
+lachy coefficient biz 
+```{r}
+lachy <- read.csv("/Users/abbeyyatsko/Downloads/Grenfell_data.csv")
+
+ggplot(lachy, aes(x = NN_predicted_shade_vol_L, y = Tree_cylinder_vol_L)) + 
+  geom_point() +
+  theme_classic()+
+  geom_smooth(method = "lm", se = FALSE, color = "red") +
+  labs(x = "ALS Shade Volume (m^3)", y = "TLS Woody Volume (m^3)") +
+  theme(plot.title = element_text(hjust = 0.5)) + 
+  geom_text(aes(label = plot_id), nudge_x = 0, nudge_y = 0.1, check_overlap = FALSE)
+
+mod <- lm(Tree_cylinder_vol_L ~ NN_predicted_shade_vol_L, data = lachy)
+summary(mod)
+```
 

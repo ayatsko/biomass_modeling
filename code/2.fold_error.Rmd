@@ -6,7 +6,6 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
 library(ggplot2)
 library(tidyr)
 library(dplyr)
@@ -20,12 +19,11 @@ tony_outputs_far <- read.csv("data/tony_output_far.csv")
 tony_outputs <- rbind(tony_outputs_original, tony_outputs_far)
 ```
 
-
 working with Tony's outputs: full list of fulls 
 ```{r}
 tony_outputs$name <- sub(".*_", "", tony_outputs$name)
 outputs <- tony_outputs
-unique(outputs$name) # 32 different folds 
+length(unique(outputs$name)) # 32 different folds 
 ```
 
 weight by area, translate heights to shade volume, calculate residuals
@@ -79,6 +77,44 @@ ggplot(metrics_long_all, aes(x = Metric, y = Value, color = Metric)) +
        y = "Error") +
   facet_wrap(~Metric, scales = "free", ncol = 3) +  # Facet by Metric
   theme_minimal()  # Minimal theme for a clean look
+
+# density plot to compare ALS and CNN model
+# group by name, calculate average of ground truth and prediction
+outputs_fold_mean <- outputs %>%
+  group_by(name) %>%
+  summarise(prediction_fold_mean = mean(prediction_mean_sv, na.rm = TRUE),
+            ground_truth_fold_mean = mean(ground_truth_mean_sv, na.rm = TRUE))
+
+outputs_long <- outputs[, c("prediction_mean_sv", "ground_truth_mean_sv", "name")]
+
+# merge outputs_long with outputs_fold_mean
+outputs_long <- merge(outputs_long, outputs_fold_mean, by = "name", all.x = TRUE)
+
+outputs_long <- pivot_longer(outputs_long, cols = c("prediction_mean_sv", "ground_truth_mean_sv"), names_to = "indexes", values_to = "values")
+
+ggplot(outputs_long, aes(x = values,  fill = indexes, group = indexes)) +  
+  theme_bw() +
+  labs(x = "Shade Volume", y = "Frequency") +
+  guides(fill = guide_legend(title = "Indexes"),
+         color = guide_legend(title = "Indexes")) +
+  facet_wrap(~name) + 
+  scale_fill_manual(values = c("#7b6f89", "#FFDB58"), labels = c("Ground truth ALS", "CNN modeled")) +
+  scale_color_manual(values = c("#7b6f89", "#FFDB58", "#7b6f89", "#FFDB58"), 
+                     labels = c("Ground truth ALS", "CNN modeled", "Ground truth ALS", "CNN modeled")) +
+  geom_density(aes(y = ..density.., fill = indexes, color = indexes), inherit.aes = TRUE, alpha=.6) +
+  geom_vline(aes(xintercept = prediction_fold_mean, color = "CNN modeled"), linetype = "dashed", size = 1) +
+  geom_vline(aes(xintercept = ground_truth_fold_mean, color = "Ground truth ALS"), linetype = "dotted", size = 1) +
+  theme(axis.title = element_text(size = 14, face = "bold", color = "gray20"),
+        axis.text.x.bottom = element_text(size = 14),
+        axis.text.y = element_text(size = 14),
+        legend.direction = "horizontal",
+        legend.position = "bottom",
+        legend.title = element_text(size = 14, face = "bold"),
+        legend.text = element_text(size = 14),
+        title = element_text(size = 14),
+        panel.spacing = unit(1, "lines"),
+        strip.text = element_text(size = 12))
+
 ```
 
 Weighted error by fold
