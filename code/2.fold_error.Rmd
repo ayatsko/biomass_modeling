@@ -33,8 +33,8 @@ outputs$weighted_test_area <- outputs$test_area / 900
 
 # heights to shade volume, weighted by test area
 outputs <- outputs %>%
-  mutate(ground_truth_mean_sv = (ground_truth_mean*weighted_test_area) * 0.25,
-         prediction_mean_sv = (prediction_mean*weighted_test_area) * 0.25)
+  mutate(ground_truth_mean_sv = (ground_truth_mean*weighted_test_area),
+         prediction_mean_sv = (prediction_mean*weighted_test_area))
 
 outputs <- outputs %>%
   mutate(residuals = ground_truth_mean_sv - prediction_mean_sv)

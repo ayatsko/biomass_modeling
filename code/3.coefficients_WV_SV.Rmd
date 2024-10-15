@@ -14,7 +14,7 @@ library(ggplot2)
 load data - TLS wood volume 
 ```{r}
 # read in list of csvs
-files <- list.files(path = "data/TLS_plot_CSVs", pattern = "AM.*\\.csv$", full.names = TRUE)
+files <- list.files(path = "~/Desktop/Arbor_Meta/FireBreak_new/GitHub/repos/savanna/data/TLS_plot_CSVs", pattern = "AM.*\\.csv$", full.names = TRUE)
 df_list <- lapply(files, read.csv)
 
 # combine list of dataframes into one dataframe
@@ -37,27 +37,36 @@ TLS_wv <- tls_wv %>%
 
 load data - ALS and CNN shade volume
 ```{r}
-ALS_sv <- read.csv("data/ALS_shade_vol_Zonal_stats.csv")
-CNN_sv <- read.csv("data/Model_shade_vol_Zonal_stats.csv")
+ALS_sv <- read.csv("~/Desktop/Arbor_Meta/FireBreak_new/GitHub/repos/savanna/data/ALS_shade_vol_Zonal_stats.csv")
+CNN_sv <- read.csv("~/Desktop/Arbor_Meta/FireBreak_new/GitHub/repos/savanna/data/Model_shade_vol_Zonal_stats.csv")
 ```
 
 Convert canopy heights to shade volume 
 ```{r}
-ALS_sv$X_mean_sv <- ALS_sv$X_mean * 0.25
-ALS_sv$X_sum_sv <- ALS_sv$X_sum * 0.25
+ALS_sv$X_mean_sv <- ALS_sv$X_mean
+ALS_sv$X_sum_sv <- ALS_sv$X_sum
 ALS_sv$method <- "ALS"
 
-CNN_sv$X_mean_sv <- CNN_sv$X_mean * 0.25
-CNN_sv$X_sum_sv <- CNN_sv$X_sum * 0.25
+CNN_sv$X_mean_sv <- CNN_sv$X_mean
+CNN_sv$X_sum_sv <- CNN_sv$X_sum
 CNN_sv$method <- "CNN"
 
 CNN_mean <- CNN_sv$X_mean_sv
 ALS_mean <- ALS_sv$X_mean_sv
 
+CNN_sum <- CNN_sv$X_sum
+ALS_sum <- ALS_sv$X_sum
+
 x <- as.data.frame(cbind(CNN_mean, ALS_mean))
+y <- as.data.frame(cbind(CNN_sum, ALS_sum))
 
 # relationship between ALS and CNN shade volume
 ggplot(x, aes(x = CNN_mean, y = ALS_mean)) + 
+  geom_point() +
+  geom_abline(intercept = 0, slope = 1, color = "red") 
+
+# relationship between ALS and CNN shade volume
+ggplot(y, aes(x = CNN_sum, y = ALS_sum)) + 
   geom_point() +
   geom_abline(intercept = 0, slope = 1, color = "red") 
 
@@ -74,7 +83,7 @@ colnames(TLS_wv)[2] <- "TLS_mean"
 colnames(TLS_wv)[3] <- "TLS_sum"
 
 # ALS shade volume
-ALS_sv_sum <- ALS_sv[, c("proj", "X_mean_sv", "X_sum_sv")]
+ALS_sv_sum <- ALS_sv[, c("proj", "X_mean_sv", "X_sum_sv", "plot_area")]
 colnames(ALS_sv_sum)[1] <- "plot_id"
 colnames(ALS_sv_sum)[2] <- "ALS_mean"
 colnames(ALS_sv_sum)[3] <- "ALS_sum"
@@ -88,6 +97,11 @@ colnames(CNN_sv_sum)[3] <- "CNN_sum"
 # merge dataframes by plot_id
 df <- merge(TLS_wv, ALS_sv_sum, by = "plot_id")
 df <- merge(df, CNN_sv_sum, by = "plot_id")
+
+df$TLS_sum_m3 <- df$TLS_sum / 1000
+
+df$TLS_sum_1m2 <- df$TLS_sum_m3 / df$plot_area
+df$ALS_sum_1m2 <- df$ALS_sum / df$plot_area
 
 # relationship between ALS and CNN shade volume
 ggplot(df, aes(x = CNN_mean, y = ALS_mean)) + 
@@ -104,7 +118,7 @@ ggplot(df, aes(x = CNN_mean, y = TLS_mean)) +
   theme_classic()
 
 # relationship between ALS shade volume and TLS woody volume
-ggplot(df, aes(x = ALS_sum, y = TLS_sum)) + 
+ggplot(df, aes(x = ALS_sum_1m2, y = TLS_sum_1m2)) + 
   geom_point() +
   theme_classic()+
   geom_smooth(method = "lm", se = FALSE, color = "red") +
@@ -113,7 +127,7 @@ ggplot(df, aes(x = ALS_sum, y = TLS_sum)) +
   #geom_text(aes(label = plot_id), nudge_x = 0, nudge_y = 0.1, check_overlap = FALSE)
 
 # Coefficient: WV (TLS): SV (ALS)
-mod <- lm(TLS_sum ~ ALS_sum, data = df)
+mod <- lm(TLS_sum_1m2 ~ ALS_sum_1m2, data = df)
 summary(mod)
 
 # Coefficient: WV (TLS): SV (CNN)

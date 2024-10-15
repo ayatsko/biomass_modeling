@@ -1,0 +1,31 @@
+---
+title: "Untitled"
+output: html_document
+date: "2024-10-15"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(raster)
+
+# Step 1: Load the GeoTIFF file
+geotiff <- raster("/home/jed/Desktop/Arbor_Meta/Int_Journal_Wildland_Fire/Take_three/model_outputs_area_tifs/clip_weighted_merged_models_no_als.tif")
+plot(geotiff, main = "", col = terrain.colors(100))
+summary(geotiff)
+
+shade_sum <- geotiff
+res(shade_sum)
+
+# Step 3: Apply the equation to calculate woody_sum
+woody_sum <- -0.0005586 + 0.0008133 * shade_sum
+plot(woody_sum, main = "", col = terrain.colors(100))
+# Step 4: Save the resulting raster as a new GeoTIFF
+writeRaster(woody_sum, "/home/jed/Desktop/Arbor_Meta/Int_Journal_Wildland_Fire/Take_three/model_outputs_area_tifs/woody_sum_result_raster.tif", format = "GTiff", overwrite = TRUE)
+
+# Optional: Print the summary of the new raster layer
+summary(woody_sum)
+```
+
