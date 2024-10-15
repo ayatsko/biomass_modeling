@@ -116,9 +116,11 @@ ggplot(outputs_long, aes(x = values,  fill = indexes, group = indexes)) +
         strip.text = element_text(size = 12))
 
 ```
+
+Summary of metrics
 ```{r}
-# Mean figures for results section
 library(dplyr)
+library(tibble)
 
 # Convert all columns except the first one to numeric
 metrics_all_numeric <- metrics_all %>%
@@ -127,11 +129,24 @@ metrics_all_numeric <- metrics_all %>%
 # Calculate the mean for each numeric column (excluding the first)
 means <- colMeans(metrics_all_numeric[, -1], na.rm = TRUE)
 
-# Set option to avoid scientific notation
-options(scipen = 999)
+# Calculate the standard deviation for each numeric column (excluding the first)
+sds <- apply(metrics_all_numeric[, -1], 2, sd, na.rm = TRUE)
 
-# Print the means in regular notation
-print(means)
+# Create a tibble with means and standard deviations as rows
+results_tibble <- tibble(
+  Statistic = c("Mean", "Standard Deviation"),
+  MAE = c(means["MAE"], sds["MAE"]),
+  RMSE = c(means["RMSE"], sds["RMSE"]),
+  MBE = c(means["MBE"], sds["MBE"]),
+  R2 = c(means["R2"], sds["R2"]),
+  MAE_p = c(means["MAE_p"], sds["MAE_p"]),
+  RMSE_p = c(means["RMSE_p"], sds["RMSE_p"]),
+  MBE_p = c(means["MBE_p"], sds["MBE_p"])
+)
+
+# Print the tibble
+print(results_tibble)
+write.csv(results_tibble, "metrics_summary.csv", row.names = FALSE)
 ```
 
 
