@@ -1,0 +1,19 @@
+---
+title: "Untitled"
+output: html_document
+date: "2024-10-15"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+PCTs <- read.csv("/home/jed/Desktop/Arbor_Meta/FireBreak_new/GitHub/repos/savanna/data/PCTs_in_extent.csv")
+head(PCTs)
+```
+
+```{r}
+unique(PCTs$PCTName)
+```
+
