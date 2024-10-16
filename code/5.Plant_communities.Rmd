@@ -14,6 +14,15 @@ head(PCTs)
 ```
 
 ```{r}
-unique(PCTs$PCTName)
+unique(PCTs$PCTID)
+```
+
+```{r}
+area <- PCTs %>% group_by(PCTID) %>%
+  summarise(total_area = sum(Shape_Area))
+# plot barplot where x = PCTName, y = total_area
+ggplot(area, aes(x = as.factor(PCTID), y = total_area)) +
+  geom_bar(stat = "identity") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
 ```
 
