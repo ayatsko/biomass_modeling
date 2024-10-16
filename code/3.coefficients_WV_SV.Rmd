@@ -14,7 +14,7 @@ library(ggplot2)
 load data - TLS wood volume 
 ```{r}
 # read in list of csvs
-files <- list.files(path = "~/Desktop/Arbor_Meta/FireBreak_new/GitHub/repos/savanna/data/TLS_plot_CSVs", pattern = "AM.*\\.csv$", full.names = TRUE)
+files <- list.files(path = "data/TLS_plot_CSVs", pattern = "AM.*\\.csv$", full.names = TRUE)
 df_list <- lapply(files, read.csv)
 
 # combine list of dataframes into one dataframe
@@ -37,8 +37,8 @@ TLS_wv <- tls_wv %>%
 
 load data - ALS and CNN shade volume
 ```{r}
-ALS_sv <- read.csv("~/Desktop/Arbor_Meta/FireBreak_new/GitHub/repos/savanna/data/ALS_shade_vol_Zonal_stats.csv")
-CNN_sv <- read.csv("~/Desktop/Arbor_Meta/FireBreak_new/GitHub/repos/savanna/data/Model_shade_vol_Zonal_stats.csv")
+ALS_sv <- read.csv("data/ALS_shade_vol_Zonal_stats.csv")
+CNN_sv <- read.csv("data/Model_shade_vol_Zonal_stats.csv")
 ```
 
 Convert canopy heights to shade volume 
@@ -121,7 +121,7 @@ ggplot(df, aes(x = CNN_mean, y = TLS_mean)) +
 ggplot(df, aes(x = ALS_sum_1m2, y = TLS_sum_1m2)) + 
   geom_point() +
   theme_classic()+
-  geom_smooth(method = "lm", se = FALSE, color = "red") +
+  geom_smooth(method = "lm", se = TRUE, color = "red") +
   labs(x = "ALS Shade Volume (m^3)", y = "TLS Woody Volume (m^3)") +
   theme(plot.title = element_text(hjust = 0.5))  
   #geom_text(aes(label = plot_id), nudge_x = 0, nudge_y = 0.1, check_overlap = FALSE)
@@ -137,7 +137,7 @@ summary(mod)
 
 troubleshooting with coefficient 
 ```{r}
-cal <- read.csv("/Users/abbeyyatsko/Downloads/callitris.csv")
+cal <- read.csv("data/callitris.csv")
 
 # merge cal and df by plot_id
 df <- merge(df, cal, by = "plot_id")
@@ -155,7 +155,22 @@ mod <- lm(TLS_sum ~ CNN_sum, data = df[df$contains_callitris == "y",])
 summary(mod)
 
 mod <- lm(TLS_sum ~ CNN_sum, data = df[df$contains_callitris == "n",])
+summary(mod)
 
+# testing PCT wd applied to volume 
+df$TLS_sum_biomass <- df$TLS_sum * df$PCT_wd
+
+# remove rows with PCTID = 125
+test <- df[df$PCTID != 125,]
+ggplot(df, aes(x = ALS_sum, y = TLS_sum_biomass, color = as.factor(PCTID))) + 
+  geom_point() +
+  theme_classic()+
+  geom_smooth(method = "lm", se = FALSE, color = "red") +
+  labs(x = "ALS Shade Volume (m^3)", y = "TLS Woody Biomass (mass unit)") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+mod <- lm(TLS_sum_biomass ~ ALS_sum, data = test)
+summary(mod)
 ```
 
 lachy coefficient biz 
