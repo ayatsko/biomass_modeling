@@ -158,18 +158,18 @@ mod <- lm(TLS_sum ~ CNN_sum, data = df[df$contains_callitris == "n",])
 summary(mod)
 
 # testing PCT wd applied to volume 
-df$TLS_sum_biomass <- df$TLS_sum * df$PCT_wd
+df$TLS_sum_1m2_biomass <- df$TLS_sum_1m2 * (1000) * df$PCT_wd * 0.001  # final units are in kg
 
 # remove rows with PCTID = 125
 test <- df[df$PCTID != 125,]
-ggplot(df, aes(x = ALS_sum, y = TLS_sum_biomass, color = as.factor(PCTID))) + 
+ggplot(test, aes(x = ALS_sum_1m2, y = TLS_sum_1m2_biomass)) + 
   geom_point() +
   theme_classic()+
-  geom_smooth(method = "lm", se = FALSE, color = "red") +
-  labs(x = "ALS Shade Volume (m^3)", y = "TLS Woody Biomass (mass unit)") +
+  geom_smooth(method = "lm", se = TRUE, color = "darkred") +
+  labs(x = "Shade Volume (m^3)", y = "TLS Woody Biomass (kg)") +
   theme(plot.title = element_text(hjust = 0.5))
 
-mod <- lm(TLS_sum_biomass ~ ALS_sum, data = test)
+mod <- lm(TLS_sum_1m2_biomass ~ ALS_sum_1m2, data = test)
 summary(mod)
 ```
 
