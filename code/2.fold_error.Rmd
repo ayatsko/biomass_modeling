@@ -13,8 +13,8 @@ library(dplyr)
 
 load data
 ```{r}
-tony_outputs_original <- read.csv("~/Desktop/Arbor_Meta/FireBreak_new/GitHub/repos/savanna/data/tony_output_original.csv")
-tony_outputs_far <- read.csv("~/Desktop/Arbor_Meta/FireBreak_new/GitHub/repos/savanna/data/tony_output_far.csv")
+tony_outputs_original <- read.csv("data/tony_output_original.csv")
+tony_outputs_far <- read.csv("data/tony_output_far.csv")
 
 tony_outputs <- rbind(tony_outputs_original, tony_outputs_far)
 ```
@@ -92,6 +92,7 @@ outputs_long <- merge(outputs_long, outputs_fold_mean, by = "name", all.x = TRUE
 
 outputs_long <- pivot_longer(outputs_long, cols = c("prediction_mean_sv", "ground_truth_mean_sv"), names_to = "indexes", values_to = "values")
 
+# for each fold
 ggplot(outputs_long, aes(x = values,  fill = indexes, group = indexes)) +  
   theme_bw() +
   labs(x = "Shade Volume", y = "Frequency") +
@@ -110,6 +111,29 @@ ggplot(outputs_long, aes(x = values,  fill = indexes, group = indexes)) +
         legend.direction = "horizontal",
         legend.position = "bottom",
         legend.title = element_text(size = 14, face = "bold"),
+        legend.text = element_text(size = 14),
+        title = element_text(size = 14),
+        panel.spacing = unit(1, "lines"),
+        strip.text = element_text(size = 12))
+
+# all folds together
+prediction_fold_mean <- mean(outputs_fold_mean$prediction_fold_mean, na.rm = TRUE)
+ground_truth_fold_mean <- mean(outputs_fold_mean$ground_truth_fold_mean, na.rm = TRUE)
+
+ggplot(outputs_long, aes(x = values,  fill = indexes)) +  
+  theme_bw() +
+  labs(x = "Shade Volume", y = "Frequency") +
+  geom_density(aes(y = ..density.., fill = indexes), inherit.aes = TRUE, alpha=.6) +
+  #geom_vline(aes(xintercept = 2.029173), color = "#FFDB58", linetype = "dashed", size = 1) +
+ # geom_vline(aes(xintercept = 2.029006), color = "#7b6f89", linetype = "dotted", size = 1) +
+  scale_fill_manual(values = c("#7b6f89", "#FFDB58"), 
+                     labels = c("Ground truth ALS", "CNN modeled")) +
+  theme(axis.title = element_text(size = 14, face = "bold", color = "gray20"),
+        axis.text.x.bottom = element_text(size = 14),
+        axis.text.y = element_text(size = 14),
+        legend.direction = "horizontal",
+        legend.position = "bottom",
+        legend.title = element_blank(),
         legend.text = element_text(size = 14),
         title = element_text(size = 14),
         panel.spacing = unit(1, "lines"),
