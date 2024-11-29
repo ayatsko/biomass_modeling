@@ -61,19 +61,9 @@ x <- as.data.frame(cbind(CNN_mean, ALS_mean))
 y <- as.data.frame(cbind(CNN_sum, ALS_sum))
 
 # relationship between ALS and CNN shade volume
-ggplot(x, aes(x = CNN_mean, y = ALS_mean)) + 
+ggplot(y, aes(x = CNN_sum, y = ALS_sum)) + # look at mean + sum
   geom_point() +
   geom_abline(intercept = 0, slope = 1, color = "red") 
-
-# relationship between ALS and CNN shade volume
-ggplot(y, aes(x = CNN_sum, y = ALS_sum)) + 
-  geom_point() +
-  geom_abline(intercept = 0, slope = 1, color = "red") 
-
-# linear regression 
-mod <- lm(CNN_mean ~ ALS_mean, data = x)
-summary(mod)
-
 ```
 
 Calculate coefficient relating woody volume to shade volume
@@ -103,13 +93,6 @@ df$TLS_sum_m3 <- df$TLS_sum / 1000
 df$TLS_sum_1m2 <- df$TLS_sum_m3 / df$plot_area
 df$ALS_sum_1m2 <- df$ALS_sum / df$plot_area
 
-# relationship between ALS and CNN shade volume
-ggplot(df, aes(x = CNN_mean, y = ALS_mean)) + 
-  geom_point() +
-  geom_abline(intercept = 0, slope = 1, color = "red") +
-  labs(x = "CNN Shade Volume (m^3)", y = "ALS Shade Volume (m^3)") +
-  theme_classic()
-
 # relationship between CNN shade volume and TLS woody volume
 ggplot(df, aes(x = CNN_mean, y = TLS_mean)) + 
   geom_point() +
@@ -134,58 +117,3 @@ summary(mod)
 mod <- lm(TLS_mean ~ CNN_mean, data = df)
 summary(mod)
 ```
-
-troubleshooting with coefficient 
-```{r}
-cal <- read.csv("data/callitris.csv")
-
-# merge cal and df by plot_id
-df <- merge(df, cal, by = "plot_id")
-
-ggplot(df, aes(x = ALS_sum, y = TLS_sum, color = contains_callitris)) + 
-  geom_point() +
-  theme_classic()+
-  facet_wrap(~contains_callitris) + 
-  geom_smooth(method = "lm", se = FALSE, color = "red") +
-  labs(x = "ALS Shade Volume (m^3)", y = "TLS Woody Volume (m^3)") +
-  theme(plot.title = element_text(hjust = 0.5)) + 
-  geom_text(aes(label = plot_id), nudge_x = 0, nudge_y = 0.1, check_overlap = FALSE)
-
-mod <- lm(TLS_sum ~ CNN_sum, data = df[df$contains_callitris == "y",])
-summary(mod)
-
-mod <- lm(TLS_sum ~ CNN_sum, data = df[df$contains_callitris == "n",])
-summary(mod)
-
-# testing PCT wd applied to volume 
-df$TLS_sum_1m2_biomass <- df$TLS_sum_1m2 * (1000) * df$PCT_wd * 0.001  # final units are in kg
-
-# remove rows with PCTID = 125
-test <- df[df$PCTID != 125,]
-ggplot(test, aes(x = ALS_sum_1m2, y = TLS_sum_1m2_biomass)) + 
-  geom_point() +
-  theme_classic()+
-  geom_smooth(method = "lm", se = TRUE, color = "darkred") +
-  labs(x = "Shade Volume (m^3)", y = "TLS Woody Biomass (kg)") +
-  theme(plot.title = element_text(hjust = 0.5))
-
-mod <- lm(TLS_sum_1m2_biomass ~ ALS_sum_1m2, data = test)
-summary(mod)
-```
-
-lachy coefficient biz 
-```{r}
-lachy <- read.csv("/Users/abbeyyatsko/Downloads/Grenfell_data.csv")
-
-ggplot(lachy, aes(x = NN_predicted_shade_vol_L, y = Tree_cylinder_vol_L)) + 
-  geom_point() +
-  theme_classic()+
-  geom_smooth(method = "lm", se = FALSE, color = "red") +
-  labs(x = "ALS Shade Volume (m^3)", y = "TLS Woody Volume (m^3)") +
-  theme(plot.title = element_text(hjust = 0.5)) + 
-  geom_text(aes(label = plot_id), nudge_x = 0, nudge_y = 0.1, check_overlap = FALSE)
-
-mod <- lm(Tree_cylinder_vol_L ~ NN_predicted_shade_vol_L, data = lachy)
-summary(mod)
-```
-
